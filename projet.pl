@@ -84,8 +84,8 @@ coup_legal(Plateau, Joueur, coup(Depart, NbPieces, Chemin)) :-
     tous_indices_valides(Chemin, Plateau).
 
 %-------------------------------------------------------------%
-% pieces_deplacables(+Pile, +Joueur, -Max)
-% Calcule le nombre maximal de pièces du joueur queon peut déplacer depuis le sommet
+%   pieces_deplacables(+Pile, +Joueur, -Max)
+%   Calcule le nombre maximal de pièces du joueur queon peut déplacer depuis le sommet
 %-------------------------------------------------------------%
 
 pieces_deplacables([], _, 0).
@@ -97,16 +97,16 @@ pieces_deplacables([J|R], J, Max) :-
 
 
 %-------------------------------------------------------------%
-% chemin_valide(+Depart, +Chemin)
-% Vérifie que le chemin est orthogonal et sans répétitions
+%   chemin_valide(+Depart, +Chemin)
+%   Vérifie que le chemin est orthogonal et sans répétitions
 %-------------------------------------------------------------%
 
 chemin_valide(Depart, Chemin) :-
     chemin_de_longueur(Depart, _, [Depart|Chemin]).
 
 %-------------------------------------------------------------%
-% tous_indices_valides(+Chemin, +Plateau)
-% Vérifie que toutes les cases du chemin sont valides
+%   tous_indices_valides(+Chemin, +Plateau)
+%   Vérifie que toutes les cases du chemin sont valides
 %-------------------------------------------------------------%
 
 tous_indices_valides([], _).
@@ -114,3 +114,14 @@ tous_indices_valides([I|R], Plateau) :-
     length(Plateau, Taille),
     I >= 0, I < Taille,
     tous_indices_valides(R, Plateau).
+
+
+%-------------------------------------------------------------%
+%   afficher_plateau(Plateau)
+%-------------------------------------------------------------%
+
+afficher_plateau(Plateau):-
+    writeln('Plateau actuel :'),
+    afficher_ligne(Plateau, 0).
+
+afficher_ligne([], _).
