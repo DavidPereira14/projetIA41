@@ -13,11 +13,11 @@ plateau_initial([
 ]).
 
 %-------------------------------------------------------------%
-%     plateau_a(Plateau, Index, Pile)
+%     pile_a(Plateau, Index, Pile)
 %-------------------------------------------------------------%
 
-plateau_a([Pile|_], 0, Pile).
-plateau_a([_|R], I, P) :- I > 0, I1 is I - 1, plateau_a(R, I1, P).
+pile_a([Pile|_], 0, Pile).
+pile_a([_|R], I, P) :- I > 0, I1 is I - 1, plateau_a(R, I1, P).
 
 %-------------------------------------------------------------%
 %  remplacer_pile(Plateau, Index, NouvellePile, NouveauPlato)
@@ -59,3 +59,58 @@ chemin_de_longueur_sans_repet(Actuel, Pas, Visitees, [Actuel|R]) :-
     P1 is Pas - 1,
     chemin_de_longueur_sans_repet(Next, P1, [Actuel|Visitees], R).
 
+%-------------------------------------------------------------------------%
+%   coup_legal(Plateau, Joueur, Coup)
+%   Coup est une structure du type Coup = coup(Depart, NbPieces, Chemin)
+%-------------------------------------------------------------------------%
+
+coup_legal(Plateau, Joueur, coup(Depart, NbPieces, Chemin)) :-
+    % 1. La pile de départ appartient au joueur (sommet)
+    pile_a(Plateau, Depart, Pile),
+    Pile = [Sommet | _],
+    Sommet = Joueur,
+
+    % 2. La pile contient assez de pièces
+    pieces_deplacables(Pile, Joueur, Max),
+    NbPieces =< Max,
+    NbPieces >= 1,  % 3. Nombres de pieces entre 1 et 3
+    NbPieces =< 3,
+
+    % 4. Chemin valide pour ce nombre de pièces
+    length(Chemin, NbPieces),
+    chemin_valide(Depart, Chemin),
+
+    % 5. On reste dans le plateau 
+    tous_indices_valides(Chemin, Plateau).
+
+%-------------------------------------------------------------%
+% pieces_deplacables(+Pile, +Joueur, -Max)
+% Calcule le nombre maximal de pièces du joueur queon peut déplacer depuis le sommet
+%-------------------------------------------------------------%
+
+pieces_deplacables([], _, 0).
+pieces_deplacables([Sommet | _], Joueur, 0) :- Sommet \= Joueur, !.
+pieces_deplacables([J|R], J, Max) :-
+    pieces_deplacables(R, J, MaxR),
+    Temp is MaxR + 1,
+    Max is min(Temp, 3).
+
+
+%-------------------------------------------------------------%
+% chemin_valide(+Depart, +Chemin)
+% Vérifie que le chemin est orthogonal et sans répétitions
+%-------------------------------------------------------------%
+
+chemin_valide(Depart, Chemin) :-
+    chemin_de_longueur(Depart, _, [Depart|Chemin]).
+
+%-------------------------------------------------------------%
+% tous_indices_valides(+Chemin, +Plateau)
+% Vérifie que toutes les cases du chemin sont valides
+%-------------------------------------------------------------%
+
+tous_indices_valides([], _).
+tous_indices_valides([I|R], Plateau) :-
+    length(Plateau, Taille),
+    I >= 0, I < Taille,
+    tous_indices_valides(R, Plateau).
