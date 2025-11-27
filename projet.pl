@@ -1,8 +1,8 @@
 
 
 
-‰ Configuration du plateu initial lors du démarrage du jeu  
-‰|[n,n] [n,n] [n,n] C0 C1 C2
+% Configuration du plateu initial lors du démarrage du jeu  
+%|[n,n] [n,n] [n,n] C0 C1 C2
 %| []     []   []   C3 C4 C5
 %|[b,b] [b,b] [b,b] C6 C7 C8
 
