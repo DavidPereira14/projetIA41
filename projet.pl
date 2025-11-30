@@ -1,11 +1,9 @@
+% ==================================================================
+%                       CONFIGURATION DU JEU
+% ==================================================================
 
-
-
-% Configuration du plateu initial lors du démarrage du jeu  
-%|[n,n] [n,n] [n,n] C0 C1 C2
-%| []     []   []   C3 C4 C5
-%|[b,b] [b,b] [b,b] C6 C7 C8
-
+% Configuration du plateau initial (Indices 0 à 8)
+% Piles de 2 pions sur C0, C1, C2 (n) et C6, C7, C8 (b).
 plateau_initial([
     [n,n],[n,n],[n,n],
     [],[],[],
@@ -26,9 +24,8 @@ pile_a([_|R], I, P) :- I > 0, I1 is I - 1, pile_a(R, I1, P).
 remplacer_pile([_|R], 0, NP, [NP|R]).
 remplacer_pile([T|R1], Index, NPile, [T|R2]) :- Index > 0, I1 is Index - 1, remplacer_pile(R1, I1, NPile, R2).
 
-
 %-------------------------------------------------------------%
-%   voisin(Index, VoisinIndex)
+%   voisin(Index, VoisinIndex) (Connexions orthogonales)
 %-------------------------------------------------------------%
 
 voisin(0, 1). voisin(0, 3).
@@ -41,53 +38,51 @@ voisin(6, 3). voisin(6, 7).
 voisin(7, 4). voisin(7, 6). voisin(7, 8).
 voisin(8, 5). voisin(8, 7).
 
-%-------------------------------------------------------------%
-%   chemin_de_longueur(Depart, Pas, Chemin)
-%-------------------------------------------------------------%
+% ==================================================================
+%                       LOGIQUE DES DÉPLACEMENTS
+% ==================================================================
 
-chemin_de_longueur(Depart, 0, [Depart]).
-chemin_de_longueur(Depart, Pas, [Depart|R]) :- Pas > 0,
-                                            voisin(Depart, Suivant),
-                                            P1 is Pas - 1,
-                                            chemin_de_longueur_sans_repet(Suivant, P1, [Depart], R).
+% --- Génération/Vérification du Chemin (CORRIGÉ) ---
 
-chemin_de_longueur_sans_repet(_, 0, _, []).
-chemin_de_longueur_sans_repet(Actuel, Pas, Visitees, [Actuel|R]) :-
+% chemin_de_longueur(+Depart, +Pas, -Chemin)
+chemin_de_longueur(Depart, Pas, Chemin) :-
+    length(Chemin, Len),
+    Len is Pas + 1,
+    Chemin = [Depart | R],
+    chemin_sans_repet(Depart, Pas, [Depart], R).
+
+chemin_sans_repet(_, 0, _, []).
+chemin_sans_repet(Actuel, Pas, Visitees, [Next|R]) :-
     Pas > 0,
-    \+ member(Actuel, Visitees),
     voisin(Actuel, Next),
+    \+ member(Next, Visitees),
     P1 is Pas - 1,
-    chemin_de_longueur_sans_repet(Next, P1, [Actuel|Visitees], R).
+    chemin_sans_repet(Next, P1, [Next|Visitees], R).
 
-%-------------------------------------------------------------------------%
-%   coup_legal(Plateau, Joueur, Coup)
-%   Coup est une structure du type Coup = coup(Depart, NbPieces, Chemin)
-%-------------------------------------------------------------------------%
 
+% --- Vérification de la Légalité ---
+
+% coup_legal(Plateau, Joueur, Coup)
 coup_legal(Plateau, Joueur, coup(Depart, NbPieces, Chemin)) :-
-    % 1. La pile de départ appartient au joueur (sommet)
+    % 1. Sommet du joueur
     pile_a(Plateau, Depart, Pile),
     Pile = [Sommet | _],
     Sommet = Joueur,
 
-    % 2. La pile contient assez de pièces
+    % 2. Pièces max 3 et disponibles
     pieces_deplacables(Pile, Joueur, Max),
-    NbPieces =< Max,
-    NbPieces >= 1,  % 3. Nombres de pieces entre 1 et 3
+    NbPieces >= 1,
     NbPieces =< 3,
+    NbPieces =< Max,
 
-    % 4. Chemin valide pour ce nombre de pièces
-    length(Chemin, NbPieces),
-    chemin_valide(Depart, Chemin),
+    % 3. Chemin valide (Pas = NbPieces)
+    Pas is NbPieces,
+    chemin_de_longueur(Depart, Pas, Chemin), 
 
-    % 5. On reste dans le plateau 
+    % 4. Indices valides
     tous_indices_valides(Chemin, Plateau).
 
-%-------------------------------------------------------------%
-%   pieces_deplacables(+Pile, +Joueur, -Max)
-%   Calcule le nombre maximal de pièces du joueur queon peut déplacer depuis le sommet
-%-------------------------------------------------------------%
-
+% pieces_deplacables(+Pile, +Joueur, -Max)
 pieces_deplacables([], _, 0).
 pieces_deplacables([Sommet | _], Joueur, 0) :- Sommet \= Joueur, !.
 pieces_deplacables([J|R], J, Max) :-
@@ -95,118 +90,99 @@ pieces_deplacables([J|R], J, Max) :-
     Temp is MaxR + 1,
     Max is min(Temp, 3).
 
-
-%-------------------------------------------------------------%
-%   chemin_valide(+Depart, +Chemin)
-%   Vérifie que le chemin est orthogonal et sans répétitions
-%-------------------------------------------------------------%
-
-chemin_valide(Depart, Chemin) :-
-    chemin_de_longueur(Depart, _, [Depart|Chemin]).
-
-%-------------------------------------------------------------%
-%   tous_indices_valides(+Chemin, +Plateau)
-%   Vérifie que toutes les cases du chemin sont valides
-%-------------------------------------------------------------%
-
+% tous_indices_valides(+Chemin, +Plateau)
 tous_indices_valides([], _).
 tous_indices_valides([I|R], Plateau) :-
     length(Plateau, Taille),
     I >= 0, I < Taille,
     tous_indices_valides(R, Plateau).
 
-%-------------------------------------------------------------%
-%   prendre_pieces(Pile, Nombre, PiecesPrises, Reste)
-%-------------------------------------------------------------%
+% ==================================================================
+%                       APPLICATION DU COUP
+% ==================================================================
 
+% prendre_pieces(Pile, Nombre, PiecesPrises, Reste)
 prendre_pieces(Pile, 0, [], Pile).
 prendre_pieces([T|R], N, [T|R2], Reste) :- 
     N > 0,
     N1 is N-1,
     prendre_pieces(R, N1, R2, Reste).
 
-%-------------------------------------------------------------%
-%   deposer_pieces(PileDestination, PiecesPrises, NouvellePile)
-%-------------------------------------------------------------%
-
+% deposer_pieces(PileDestination, PiecesPrises, NouvellePile)
 deposer_pieces(PileDestination, PiecesPrises, NouvellePile) :-
     append(PiecesPrises, PileDestination, NouvellePile).
 
-
-%------------------------------------------------------------------------------------------------------%
-%   appliquer_coup(Plateau, Coup, NouveauPlateau) Coup est défini par coup(Depart, NbPieces, Chemin)
-%------------------------------------------------------------------------------------------------------%
-
+% appliquer_coup(Plateau, Coup, NouveauPlateau)
 appliquer_coup(Plateau, coup(Depart, NbPieces, Chemin), NouveauPlateau) :-
-
-    % 1. Récuperer la pile de départ.
-    pile_a(Plateau, Depart, Pile),
-
-    % 2. Prendre pièces de la pile
-    prendre_pieces(Pile, NbPieces, PiecesPrises, Reste),
-
-    % 3. Récuperer arrivée
+    
+    pile_a(Plateau, Depart, PileDepart),
     last(Chemin, Arrivee),
+    pile_a(Plateau, Arrivee, PileArrivee), 
 
-    % 4. Récuperer la pile Arrivee
-    pile_a(Plateau, Arrivee, PileArrivee),
-
-    % 5. Récuperer la pile de Depart sur la pile Arrivee
+    prendre_pieces(PileDepart, NbPieces, PiecesPrises, ResteDepart),
     deposer_pieces(PileArrivee, PiecesPrises, NouvellePileArrivee),
-
-    % 6. Mettre a jour la nouvelle pile de depart sur plateau
-    remplacer_pile(Plateau, Depart, Reste, PlateauIntermediaire),
-
-    % 7. Mettre a jour la nouvelle pile arrivee sur Plateau
+    
+    remplacer_pile(Plateau, Depart, ResteDepart, PlateauIntermediaire),
     remplacer_pile(PlateauIntermediaire, Arrivee, NouvellePileArrivee, NouveauPlateau).
 
+% ==================================================================
+%                           VICTOIRE
+% ==================================================================
 
-%-------------------------------------------------------------%
-%   victoire(Plateau, Joueur)
-%-------------------------------------------------------------%
-
+% victoire(Plateau, Joueur)
 victoire(Plateau, Joueur) :-
     verif_victoire(Plateau, Joueur).
 
-verif_victoire([], _).
-
+verif_victoire([], _). 
 verif_victoire([[]|R], Joueur) :-
     verif_victoire(R, Joueur).
-
-verif_victoire([[Sommet|_]|R], Joueur) :-
-    Sommet = Joueur,
+verif_victoire([[Joueur|_]|R], Joueur) :-
     verif_victoire(R, Joueur).
 
-%-------------------------------------------------------------%
-%   jouer(Plateau, Joueur)
-%-------------------------------------------------------------%
+% ==================================================================
+%                       BOUCLE DE JEU & I/O
+% ==================================================================
 
-jouer(Plateau, Joueur) :-
-    afficher_plateau(Plateau),
-    victoire(Plateau, Joueur),
-    format('--- PARTIE TERMINÉE ! Le joueur ~w a gagné ! ---~n', [Joueur]),
-    !. % Couper pour ne pas continuer la boucle
+% changer_joueur(Joueur, JoueurSuivant)
+changer_joueur(n, b).
+changer_joueur(b, n).
 
+% --- Boucle Principale (Corrigée pour la Victoire) ---
+
+% Clause 1 : Le joueur PRÉCÉDENT a gagné (Arrêt du jeu)
 jouer(Plateau, Joueur) :-
+    changer_joueur(Joueur, JoueurPrecedent), 
+    victoire(Plateau, JoueurPrecedent),
+    afficher_plateau(Plateau), 
+    format('--- PARTIE TERMINÉE ! Le joueur ~w a gagné ! ---~n', [JoueurPrecedent]),
+    !. 
+
+% Clause 2 : Le tour se déroule normalement
+jouer(Plateau, Joueur) :-
+    afficher_plateau(Plateau), 
     format('~n--- Au tour du joueur ~w ---~n', [Joueur]),
 
+    % 1. Obtenir un coup légal
     repeat,
         demander_coup(Joueur, Coup),
         (   coup_legal(Plateau, Joueur, Coup)
-        -> ! % Coup légal, sortir de la boucle
+        ->  ! 
         ;
-            writeln('Coup illégal, Veuillez réessayer.'),
-            fail % Recommencer la boucle 
+            writeln('Coup illégal. Vérifiez la case de départ, le nombre de pièces, et le chemin. Veuillez réessayer.'),
+            fail 
         ),
     
+    % 2. Appliquer le coup
     afficher_coup(Coup),
     appliquer_coup(Plateau, Coup, NouveauPlateau),
+    
+    % 3. Tour suivant
     changer_joueur(Joueur, NouveauJoueur),
     jouer(NouveauPlateau, NouveauJoueur).
 
+% --- Interface Utilisateur ---
 
 demander_coup(Joueur, Coup) :-
-    % 1. Afficher instruction et le format de saisie attendu
     format('~n--- Saisie du coup pour le joueur ~w ---~n', [Joueur]),
     writeln('Veuillez entrer votre coup sous la forme :'),
     writeln('coup(CaseDepart, NbPieces, Chemin)'),
@@ -215,83 +191,88 @@ demander_coup(Joueur, Coup) :-
     writeln('  - CaseDepart : Indice de la pile à déplacer (0 à 8).'),
     writeln('  - NbPieces : Nombre de pièces à déplacer (1, 2 ou 3).'),
     writeln('  - Chemin : Liste des indices visités, y compris le départ et l\'arrivée.'),
-    writeln('    (Ex: [0, 1, 4] pour un déplacement de 2 pas de 0 à 4)'),
+    writeln('    (Ex: [6, 7, 4] pour un déplacement de 2 pas de 6 à 4)'),
     
-    % 2. Inviter utilisateur à saisir
     format('Votre coup (terminer par un point .): '),
     read(Coup).
 
 afficher_coup(coup(Depart, NbPieces, Chemin)) :-
     last(Chemin, Arrivee),
-    format('  -> Déplace ~w pièce(s) de la case ~w vers la case ~w.~n', 
+    format('  -> Le joueur déplace ~w pièce(s) de C~w vers C~w.~n', 
            [NbPieces, Depart, Arrivee]).
-%-------------------------------------------------------------%
-%   changer_joueur(Joueur, JoueurSuivant)
-%-------------------------------------------------------------%
 
-changer_joueur(n, b).
-changer_joueur(b, n).
+% --- Affichage du Plateau (Détaillé) ---
 
-
-%-------------------------------------------------------------%
-%   afficher_plateau(Plateau)
-%-------------------------------------------------------------%
-
-% afficher_plateau(+Plateau)
-% Affiche le plateau de 9 cases sous forme de grille 3x3.
 afficher_plateau(Plateau) :-
-    writeln('\n*** PLATEAU DE JEU POGO (Indices C0 à C8) ***'),
+    writeln('\n═════════════════════════════════════════'),
+    writeln('       ♟️ PLATEAU DE JEU POGO (C0-C8) ♟️'),
+    writeln('═════════════════════════════════════════'),
     
-    % On coupe la liste des 9 piles en 3 lignes de 3 piles
     Plateau = [P0, P1, P2, P3, P4, P5, P6, P7, P8],
     
-    afficher_ligne_simple(0, P0, P1, P2),
-    afficher_ligne_simple(3, P3, P4, P5),
-    afficher_ligne_simple(6, P6, P7, P8),
+    afficher_ligne_ludique(0, P0, P1, P2),
+    afficher_ligne_ludique(3, P3, P4, P5),
+    afficher_ligne_ludique(6, P6, P7, P8),
     
-    writeln('*******************************************\n').
+    writeln('═════════════════════════════════════════\n').
 
-% afficher_ligne_simple(+IndiceDebut, +Pile1, +Pile2, +Pile3)
-% Affiche une ligne complète (indices, sommets et hauteurs)
-afficher_ligne_simple(IndiceDebut, P1, P2, P3) :-
-    I1 is IndiceDebut,
-    I2 is IndiceDebut + 1,
-    I3 is IndiceDebut + 2,
-
-    % 1. Afficher les indices de case (C0, C1, C2...)
-    format('  | C~w   | C~w   | C~w   |~n', [I1, I2, I3]),
-    writeln('  +-------+-------+-------+'),
+afficher_ligne_ludique(IndiceDebut, P1, P2, P3) :-
+    I1 is IndiceDebut, I2 is IndiceDebut + 1, I3 is IndiceDebut + 2,
     
-    % 2. Afficher le sommet et la hauteur de la pile 1
-    afficher_info_case(P1, S1, H1),
-    % 3. Afficher le sommet et la hauteur de la pile 2
-    afficher_info_case(P2, S2, H2),
-    % 4. Afficher le sommet et la hauteur de la pile 3
-    afficher_info_case(P3, S3, H3),
+    % Ligne 1: Indices de case
+    format('  |  C~w    |  C~w    |  C~w    |~n', [I1, I2, I3]),
+    writeln('  +---------+---------+---------+'),
     
-    % 5. Afficher la ligne de contenu (Sommet(Hauteur))
-    format('  | ~w(~w) | ~w(~w) | ~w(~w) |~n', [S1, H1, S2, H2, S3, H3]),
-    writeln('  +-------+-------+-------+').
-
-% afficher_info_case(+Pile, -Sommet, -Hauteur)
-% Détermine les infos de la case (sommet ou ' ' si vide)
-afficher_info_case([], ' ', 0). % Case vide : sommet = ' ' (espace), hauteur = 0
-afficher_info_case([Sommet|_], Sommet, Hauteur) :-
-    length([Sommet|_], Hauteur).
-
+    % Ligne 2: Affichage de la composition détaillée de la pile
+    write('  |'), afficher_composition_pile_ligne(P1), 
+    write('|'), afficher_composition_pile_ligne(P2), 
+    write('|'), afficher_composition_pile_ligne(P3), writeln('|'),
     
-%-------------------------------------------%
-%   Lancer le jeu
-%-------------------------------------------%
+    % Ligne 3: Hauteur et Contrôleur (Sommet)
+    afficher_info_pile(P1, _, Sommet1, Hauteur1),
+    afficher_info_pile(P2, _, Sommet2, Hauteur2),
+    afficher_info_pile(P3, _, Sommet3, Hauteur3),
+    format('  | ~w  | ~w  | ~w  |~n', 
+           [Sommet1, Sommet2, Sommet3]),
+    writeln('  +---------+---------+---------+').
+
+
+afficher_composition_pile_ligne(Pile) :-
+    (   Pile = []
+    ->  String = 'VIDE'
+    ;   term_string(Pile, StringP),
+        (   atom_length(StringP, LenP), LenP > 8
+        ->  sub_atom(StringP, 0, 7, _, Short),
+            atom_concat(Short, '..]', String)
+        ;   String = StringP
+        )
+    ),
+    
+    atom_length(String, Len),
+    Padding is (9 - Len) // 2,
+    Extra is 9 - Len - Padding, % Ajuster la taille de la colonne à 9 (incluant les |)
+    
+    tab(Padding),
+    write(String),
+    tab(Extra).
+
+
+afficher_info_pile([], '.', 'VIDE', 0). 
+afficher_info_pile([b|_], '⚪', 'B (Blanc)', Hauteur) :-
+    length([b|_], Hauteur).
+afficher_info_pile([n|_], '⚫', 'N (Noir)', Hauteur) :-
+    length([n|_], Hauteur).
+    
+% --- Lancement du Jeu ---
 
 choisir_joueur_initial(Joueur):-
     random(0, 2, R),
     (R = 0
     -> Joueur = b,
-        writeln('Pile ou face : Le joueur BLANC(b) commence')
+        writeln('Pile ou face : Le joueur BLANC (b) commence.')
     ;
         Joueur = n,
-        writeln('Pile ou face : Le joueur NOIR(n) commence')
+        writeln('Pile ou face : Le joueur NOIR (n) commence.')
     ).
 
 main :-
@@ -299,11 +280,7 @@ main :-
     writeln('         Lancement du jeu POGO en Prolog      '),
     writeln('=============================================='),
     
-    % 1. Initialiser le plateau
     plateau_initial(PlateauInitial),
-    
-    % 2. Tirer au sort le joueur qui commence
     choisir_joueur_initial(JoueurInitial),
     
-    % 3. Lancer la boucle de jeu
     jouer(PlateauInitial, JoueurInitial).
