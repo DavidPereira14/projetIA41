@@ -181,20 +181,20 @@ minimax(Plateau, Joueur, Profondeur, MeilleurCoup, Score) :-
     ->  Score = -1000, MeilleurCoup = none  % Pas de coup possible, défaite
     ;   P1 is Profondeur - 1,
         changer_joueur(Joueur, Adversaire),
-        evaluer_coups(Coups, Plateau, Joueur, Adversaire, P1, MeilleurCoup, Score)
+        evaluer_coups(Coups, Plateau, Adversaire, P1, MeilleurCoup, Score)
     ).
 
 % evaluer_coups(Coups, Plateau, Joueur, Adversaire, Profondeur, MeilleurCoup, Score)
-evaluer_coups([Coup], Plateau, Joueur, Adversaire, Profondeur, Coup, Score) :-
+evaluer_coups([Coup], Plateau, Adversaire, Profondeur, Coup, Score) :-
     appliquer_coup(Plateau, Coup, NouveauPlateau),
     minimax(NouveauPlateau, Adversaire, Profondeur, _, ScoreOpp),
     Score is -ScoreOpp.
 
-evaluer_coups([Coup|R], Plateau, Joueur, Adversaire, Profondeur, MeilleurCoup, Score) :-
+evaluer_coups([Coup|R], Plateau, Adversaire, Profondeur, MeilleurCoup, Score) :-
     appliquer_coup(Plateau, Coup, NouveauPlateau),
     minimax(NouveauPlateau, Adversaire, Profondeur, _, ScoreOpp),
     ScoreCoup is -ScoreOpp,
-    evaluer_coups(R, Plateau, Joueur, Adversaire, Profondeur, AutreCoup, ScoreAutre),
+    evaluer_coups(R, Plateau, Adversaire, Profondeur, AutreCoup, ScoreAutre),
     (   ScoreCoup > ScoreAutre
     ->  MeilleurCoup = Coup, Score = ScoreCoup
     ;   MeilleurCoup = AutreCoup, Score = ScoreAutre
@@ -268,7 +268,7 @@ jouer(Plateau, joueur(Type, Couleur)) :-
 
 % --- Interface Utilisateur ---
 
-demander_coup(Plateau, joueur(human, Couleur), Coup) :-
+demander_coup(_, joueur(human, Couleur), Coup) :-
     format('~n--- Saisie du coup pour le joueur ~w ---~n', [Couleur]),
     writeln('Veuillez entrer votre coup sous la forme :'),
     writeln('coup(CaseDepart, NbPieces, Chemin)'),
