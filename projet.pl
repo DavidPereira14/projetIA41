@@ -236,7 +236,7 @@ jouer(Plateau, joueur(_, Couleur)) :-
     changer_joueur(Couleur, CouleurPrecedente),
     victoire(Plateau, CouleurPrecedente),
     afficher_plateau(Plateau),
-    format('--- PARTIE TERMINÉE ! Le joueur ~w a gagné ! ---~n', [CouleurPrecedente]),
+    format('--- PARTIE TERMINEE ! Le joueur ~w a gagne ! ---~n', [CouleurPrecedente]),
     !.
 
 % Clause 2 : Le tour se déroule normalement
@@ -295,9 +295,9 @@ afficher_coup(coup(Depart, NbPieces, Chemin)) :-
 % --- Affichage du Plateau (Détaillé et Agrandi) ---
 
 afficher_plateau(Plateau) :-
-    writeln('\n═══════════════════════════════════════════════════════════════════════════════'),
-    writeln('                    ♟️ PLATEAU DE JEU POGO (C0-C8) ♟️'),
-    writeln('═══════════════════════════════════════════════════════════════════════════════'),
+    writeln('\n-------------------------------------------------------------------------------'),
+    writeln('                     PLATEAU DE JEU POGO (C0-C8) '),
+    writeln('-------------------------------------------------------------------------------'),
     writeln(''),
 
     Plateau = [P0, P1, P2, P3, P4, P5, P6, P7, P8],
@@ -308,7 +308,9 @@ afficher_plateau(Plateau) :-
     writeln(''),
     afficher_ligne_ludique(6, P6, P7, P8),
 
-    writeln('═══════════════════════════════════════════════════════════════════════════════\n').
+    writeln('-------------------------------------------------------------------------------\n'),
+    writeln('-------------------------------------------------------------------------------\n').
+
 
 afficher_ligne_ludique(IndiceDebut, P1, P2, P3) :-
     I1 is IndiceDebut, I2 is IndiceDebut + 1, I3 is IndiceDebut + 2,
@@ -351,12 +353,6 @@ afficher_composition_pile_ligne(Pile) :-
     tab(Extra).
 
 
-afficher_info_pile([], 'VIDE', 'VIDE', 0).
-afficher_info_pile([b|_], '⚪', 'B (Blanc)', Hauteur) :-
-    length([b|_], Hauteur).
-afficher_info_pile([n|_], '⚫', 'N (Noir)', Hauteur) :-
-    length([n|_], Hauteur).
-
 % top_letter(Pile, Letter)
 top_letter([], ' ').
 top_letter([Top|_], Top).
@@ -387,9 +383,9 @@ choisir_joueur_initial(Couleur):-
     ).
 
 main :-
-    writeln('=============================================='),
+    writeln('----------------------------------------------'),
     writeln('         Lancement du jeu POGO en Prolog      '),
-    writeln('=============================================='),
+    writeln('----------------------------------------------'),
 
     % Choisir les types de joueurs
     choisir_type_joueur(n, TypeN),
