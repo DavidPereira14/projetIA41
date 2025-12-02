@@ -4,155 +4,177 @@
 #include <iostream>
 
 GameWindow::GameWindow()
-        : window(sf::VideoMode(1100, 1200), "Pogo - IA41"),
+        : window(sf::VideoMode(1100, 1100), "Pogo - IA41"),
           selectedIndex(-1),
-          targetIndex(-1)
+          targetIndex(-1),
+          currentPlayerTurn(BLACK),
+          isGameOver(false),
+          winner(EMPTY)
 {
-    // On initialise le plateau de test dès le lancement
+    window.setFramerateLimit(60);
     initMockBoard();
+    currentPath.clear();
 
     // --- CONFIGURATION DU BOUTON VALIDER ---
-    // Un rectangle Vert en bas à droite
     validateButton.setSize(sf::Vector2f(200, 80));
-    validateButton.setPosition(850, 1025); // En bas à droite
-    validateButton.setFillColor(sf::Color(50, 200, 50)); // Vert
+    validateButton.setPosition(850, 1005 );
+    validateButton.setFillColor(sf::Color(50, 200, 50));
     validateButton.setOutlineThickness(2);
     validateButton.setOutlineColor(sf::Color::White);
+
+    // --- CONFIGURATION TEXTE DE FIN (NOUVEAU) ---
+    if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf")) {
+        std::cerr << "Erreur: Police arial.ttf introuvable." << std::endl;
+    }
+
+    victoryText.setFont(font);
+    victoryText.setCharacterSize(80);
+    victoryText.setOutlineThickness(4);
+
+    subText.setFont(font);
+    subText.setString("(Cliquer pour quitter)");
+    subText.setCharacterSize(30);
+    subText.setFillColor(sf::Color::Yellow);
+    subText.setOutlineColor(sf::Color::Black);
+    subText.setOutlineThickness(2);
 }
 
 void GameWindow::initMockBoard() {
     boardState.resize(9);
+    for(auto& cell : boardState) cell.stack.clear();
 
-    // Nettoyage complet
-    for(auto& cell : boardState) {
-        cell.stack.clear();
-    }
-
-    // --- Configuration Initiale Pogo ---
-    // Noirs en haut
-    boardState[0].stack = {BLACK, BLACK}; // Exemple simple
+    // Configuration Initiale
+    boardState[0].stack = {BLACK, BLACK};
     boardState[1].stack = {BLACK, BLACK};
     boardState[2].stack = {BLACK, BLACK};
 
-    // Blancs en bas
     boardState[6].stack = {WHITE, WHITE};
     boardState[7].stack = {WHITE, WHITE};
     boardState[8].stack = {WHITE, WHITE};
 }
 
-void GameWindow::run()
-{
-    while (window.isOpen())
-    {
+void GameWindow::run() {
+    while (window.isOpen()) {
         processEvents();
-
         window.clear(sf::Color(50, 50, 50));
 
         drawBoard();
-        drawButton(); // Cette fonction est maintenant définie plus bas !
+        drawButton();
+
+        // Afficher l'écran de fin si nécessaire
+        if (isGameOver) {
+            drawGameOver();
+        }
 
         window.display();
+
+        // --- VERIFICATION VICTOIRE ---
+        if (!isGameOver) {
+            PlayerColor w = prolog.getWinner(boardState);
+            if (w != EMPTY) {
+                isGameOver = true;
+                winner = w;
+
+                // Configurer le message
+                if (winner == WHITE) {
+                    victoryText.setString("L'IA (BLANC)\nA GAGNE !");
+                    victoryText.setFillColor(sf::Color(200, 200, 255));
+                    victoryText.setOutlineColor(sf::Color::Black);
+                } else {
+                    victoryText.setString("VOUS (NOIR)\nAVEZ GAGNE !");
+                    victoryText.setFillColor(sf::Color(100, 255, 100));
+                    victoryText.setOutlineColor(sf::Color::Black);
+                }
+
+                // Centrage
+                sf::FloatRect tr = victoryText.getLocalBounds();
+                victoryText.setOrigin(tr.left + tr.width/2.0f, tr.top + tr.height/2.0f);
+                victoryText.setPosition(550, 550); // Centre de 1100x1100
+
+                sf::FloatRect sr = subText.getLocalBounds();
+                subText.setOrigin(sr.left + sr.width/2.0f, sr.top + sr.height/2.0f);
+                subText.setPosition(550, 700);
+            }
+        }
+
+        // --- TOUR IA ---
+        if (!isGameOver && currentPlayerTurn == WHITE) {
+            sf::sleep(sf::milliseconds(500));
+            playAITurn();
+        }
     }
 }
 
-// --- AJOUT MANQUANT : La fonction pour dessiner le bouton ---
+void GameWindow::playAITurn() {
+    std::cout << "--- TOUR DE L'IA (BLANC) ---" << std::endl;
+    MoveInfo move = prolog.getAIMove(boardState, WHITE);
+
+    if (move.start != -1) {
+        boardState = prolog.executeMove(boardState, move.start, move.end, move.numPieces, WHITE);
+        std::cout << "-> IA a joue !" << std::endl;
+    } else {
+        std::cout << "-> IA bloquee." << std::endl;
+    }
+    currentPlayerTurn = BLACK;
+}
+
+void GameWindow::drawGameOver() {
+    sf::RectangleShape overlay(sf::Vector2f(1100, 1100));
+    overlay.setFillColor(sf::Color(0, 0, 0, 200));
+    window.draw(overlay);
+    window.draw(victoryText);
+    window.draw(subText);
+}
+
 void GameWindow::drawButton() {
-    // On dessine le bouton seulement si on a choisi une cible
-    if (targetIndex != -1) {
+    // On affiche le bouton si on a tracé un chemin valide ET que le jeu n'est pas fini
+    if (currentPath.size() >= 2 && !isGameOver) {
         window.draw(validateButton);
     }
 }
 
-void GameWindow::drawBoard()
-{
-    float size = 300.f;
-    float margeHaut = 100.0f;
-    float margeGauche = 100.0f;
+void GameWindow::drawBoard() {
+    float size = 300.f; float margeHaut = 100.0f; float margeGauche = 100.0f;
+    float radius = 70.f; float epaisseur = 20.0f; float contour = 3.0f;
 
-    float radius = 70.f;
-    float epaisseur = 20.0f;
-    float contour = 3.0f;
-
-    for (int i = 0; i < 9; i++)
-    {
+    for (int i = 0; i < 9; i++) {
         float x = (i % 3) * size + margeGauche;
         float y = (i / 3) * size + margeHaut;
 
-        // 1. DESSINER LA CASE
         sf::RectangleShape rect(sf::Vector2f(size, size));
-        rect.setPosition(x, y);
-        rect.setFillColor(sf::Color(100, 100, 100));
+        rect.setPosition(x, y); rect.setFillColor(sf::Color(100, 100, 100));
 
-        // --- C'EST ICI QUE VOUS AVIEZ OUBLIÉ LA LOGIQUE DES COULEURS ---
-        if (i == selectedIndex) {
-            // DÉPART : Bordure VERTE
-            rect.setOutlineThickness(-10.0f);
-            rect.setOutlineColor(sf::Color::Green);
+        // Couleurs du chemin
+        auto it = std::find(currentPath.begin(), currentPath.end(), i);
+        if (it != currentPath.end()) {
+            if (it == currentPath.begin()) {
+                rect.setOutlineThickness(-10.0f); rect.setOutlineColor(sf::Color::Green);
+            } else {
+                rect.setOutlineThickness(-10.0f); rect.setOutlineColor(sf::Color::Cyan);
+            }
+        } else {
+            rect.setOutlineThickness(-5.0f); rect.setOutlineColor(sf::Color::Black);
         }
-        else if (i == targetIndex) {
-            // ARRIVÉE : Bordure CYAN
-            rect.setOutlineThickness(-10.0f);
-            rect.setOutlineColor(sf::Color::Cyan);
-        }
-        else {
-            // Case normale : Bordure NOIRE
-            rect.setOutlineThickness(-5.0f);
-            rect.setOutlineColor(sf::Color::Black);
-        }
-
         window.draw(rect);
 
-        // 2. DESSINER LES PIONS
+        // Pions
         std::vector<PlayerColor>& pile = boardState[i].stack;
-
         for(size_t k = 0; k < pile.size(); k++) {
-
             float posX = x + size/2 - radius;
             float posY = y + size/2 - radius + 50 + (k * -epaisseur);
+            sf::Color cFond = (pile[k] == WHITE) ? sf::Color::White : sf::Color::Black;
+            sf::Color cTrait = (pile[k] == WHITE) ? sf::Color::Black : sf::Color::White;
 
-            sf::Color couleurFond;
-            sf::Color couleurTrait;
-
-            if (pile[k] == WHITE) {
-                couleurFond = sf::Color::White;
-                couleurTrait = sf::Color::Black;
-            } else {
-                couleurFond = sf::Color::Black;
-                couleurTrait = sf::Color::White;
-            }
-
-            // A. LE BAS
-            sf::CircleShape bas(radius);
-            bas.setPosition(posX, posY + epaisseur);
-            bas.setFillColor(couleurFond);
-            bas.setOutlineThickness(contour);
-            bas.setOutlineColor(couleurTrait);
-            window.draw(bas);
-
-            // B. LE CORPS
-            sf::RectangleShape corps(sf::Vector2f(radius * 2, epaisseur));
-            corps.setPosition(posX, posY + radius);
-            corps.setFillColor(couleurFond);
-            window.draw(corps);
-
-            // C. BORDS VERTICAUX
-            sf::RectangleShape bordGauche(sf::Vector2f(contour, epaisseur));
-            bordGauche.setPosition(posX - contour, posY + radius);
-            bordGauche.setFillColor(couleurTrait);
-            window.draw(bordGauche);
-
-            sf::RectangleShape bordDroit(sf::Vector2f(contour, epaisseur));
-            bordDroit.setPosition(posX + (radius * 2), posY + radius);
-            bordDroit.setFillColor(couleurTrait);
-            window.draw(bordDroit);
-
-            // D. LE HAUT
-            sf::CircleShape haut(radius);
-            haut.setPosition(posX, posY);
-            haut.setFillColor(couleurFond);
-            haut.setOutlineThickness(contour);
-            haut.setOutlineColor(couleurTrait);
-            window.draw(haut);
+            sf::CircleShape bas(radius); bas.setPosition(posX, posY + epaisseur); bas.setFillColor(cFond);
+            bas.setOutlineThickness(contour); bas.setOutlineColor(cTrait); window.draw(bas);
+            sf::RectangleShape corps(sf::Vector2f(radius * 2, epaisseur)); corps.setPosition(posX, posY + radius);
+            corps.setFillColor(cFond); window.draw(corps);
+            sf::RectangleShape bg(sf::Vector2f(contour, epaisseur)); bg.setPosition(posX - contour, posY + radius);
+            bg.setFillColor(cTrait); window.draw(bg);
+            sf::RectangleShape bd(sf::Vector2f(contour, epaisseur)); bd.setPosition(posX + radius*2, posY + radius);
+            bd.setFillColor(cTrait); window.draw(bd);
+            sf::CircleShape haut(radius); haut.setPosition(posX, posY); haut.setFillColor(cFond);
+            haut.setOutlineThickness(contour); haut.setOutlineColor(cTrait); window.draw(haut);
         }
     }
 }
@@ -160,10 +182,7 @@ void GameWindow::drawBoard()
 void GameWindow::processEvents() {
     sf::Event event;
     while (window.pollEvent(event)) {
-        if (event.type == sf::Event::Closed) {
-            window.close();
-        }
-
+        if (event.type == sf::Event::Closed) window.close();
         if (event.type == sf::Event::MouseButtonPressed) {
             if (event.mouseButton.button == sf::Mouse::Left) {
                 handleMouseClick(event.mouseButton.x, event.mouseButton.y);
@@ -172,78 +191,62 @@ void GameWindow::processEvents() {
     }
 }
 
-
 void GameWindow::handleMouseClick(int mouseX, int mouseY) {
 
-    // 1. EST-CE UN CLIC SUR LE BOUTON VALIDER ?
-    if (targetIndex != -1 && validateButton.getGlobalBounds().contains(mouseX, mouseY)) {
-        std::cout << "ACTION : Validation du coup !" << std::endl;
-        applyMove();
+    // 1. SI JEU FINI -> CLIC = QUITTER
+    if (isGameOver) {
+        window.close();
         return;
     }
 
-    // 2. EST-CE UN CLIC SUR LA GRILLE ?
-    float size = 300.f;
-    float margeHaut = 100.0f;
-    float margeGauche = 100.0f;
+    // 2. PROTECTION TOUR
+    if (currentPlayerTurn != BLACK) return;
 
+    // 3. CLIC BOUTON (Validation)
+    if (currentPath.size() >= 2 && validateButton.getGlobalBounds().contains(mouseX, mouseY)) {
+        int depart = currentPath[0];
+        int arrivee = currentPath.back();
+        int nbPieces = currentPath.size() - 1;
+        PlayerColor currentPlayer = boardState[depart].stack.back();
+
+        if (prolog.isValidMove(boardState, depart, arrivee, nbPieces, currentPlayer)) {
+            boardState = prolog.executeMove(boardState, depart, arrivee, nbPieces, currentPlayer);
+            currentPath.clear();
+            currentPlayerTurn = WHITE; // À l'IA !
+        } else {
+            std::cout << "Coup refuse par Prolog." << std::endl;
+            currentPath.clear();
+        }
+        return;
+    }
+
+    // 4. CLIC GRILLE (Tracé)
+    float size = 300.f; float margeHaut = 100.0f; float margeGauche = 100.0f;
     if (mouseX < margeGauche || mouseX > margeGauche + (3 * size) ||
         mouseY < margeHaut || mouseY > margeHaut + (3 * size)) {
-        selectedIndex = -1;
-        targetIndex = -1;
-        return;
+        currentPath.clear(); return;
     }
 
     int col = (mouseX - margeGauche) / size;
     int row = (mouseY - margeHaut) / size;
     int index = row * 3 + col;
 
-    // --- MACHINE À ÉTATS DU CLIC ---
-
-    // CAS A : Rien n'est sélectionné -> On choisit le DÉPART
-    if (selectedIndex == -1) {
-        if (boardState[index].stack.empty()) {
-            std::cout << "Erreur : Case vide." << std::endl;
+    if (currentPath.empty()) {
+        if (boardState[index].stack.empty()) return;
+        if (boardState[index].stack.back() == BLACK) {
+            currentPath.push_back(index);
+        }
+    } else {
+        int dernier = currentPath.back();
+        if (index == dernier) {
+            currentPath.pop_back(); // Undo
             return;
         }
-
-        // RÈGLE : Doit être un pion NOIR (Mock)
-        if (boardState[index].stack.back() == BLACK) {
-            selectedIndex = index;
-            std::cout << "Depart selectionne : Case " << index << std::endl;
-        } else {
-            std::cout << "Erreur : Ce n'est pas votre pion (Noir requis)." << std::endl;
+        if (std::find(currentPath.begin(), currentPath.end(), index) != currentPath.end()) {
+            currentPath.clear(); // Reset si boucle
+            return;
         }
+        currentPath.push_back(index);
+        if (currentPath.size() > 4) currentPath.pop_back(); // Max 3 pas
     }
-        // CAS B : Départ déjà choisi -> On choisit la DESTINATION
-    else if (selectedIndex != -1 && targetIndex == -1) {
-        if (index == selectedIndex) {
-            selectedIndex = -1;
-            std::cout << "Selection annulee." << std::endl;
-        } else {
-            targetIndex = index;
-            std::cout << "Destination choisie : Case " << index << std::endl;
-        }
-    }
-        // CAS C : Tout est choisi -> Changement de destination
-    else if (targetIndex != -1) {
-        targetIndex = index;
-        std::cout << "Nouvelle destination : Case " << index << std::endl;
-    }
-}
-
-void GameWindow::applyMove() {
-    if (selectedIndex == -1 || targetIndex == -1) return;
-
-    std::vector<PlayerColor>& source = boardState[selectedIndex].stack;
-    std::vector<PlayerColor>& dest = boardState[targetIndex].stack;
-
-    // Déplacement de toute la pile (Mock)
-    dest.insert(dest.end(), source.begin(), source.end());
-    source.clear();
-
-    std::cout << "Deplacement effectue de " << selectedIndex << " vers " << targetIndex << std::endl;
-
-    selectedIndex = -1;
-    targetIndex = -1;
 }
