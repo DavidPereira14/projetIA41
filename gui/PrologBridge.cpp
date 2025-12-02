@@ -96,9 +96,10 @@ std::vector<Cell> PrologBridge::executeMove(const std::vector<Cell>& board, int 
         args[2] = PlTerm((long)start);
         args[3] = PlTerm((long)end);
         args[4] = PlTerm((long)numPieces);
-        args[5] = plResultBoard; // Variable de sortie
+        args[5] = plResultBoard;
 
-        // 3. APPEL : jouer_coup_simule
+        // --- VERIFIEZ CETTE LIGNE ---
+        // Le nom entre guillemets DOIT être "jouer_coup_wrapper"
         PlQuery q("jouer_coup_wrapper", args);
 
         if (q.next_solution()) {
