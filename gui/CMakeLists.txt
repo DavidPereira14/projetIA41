@@ -8,6 +8,7 @@ set(SOURCES
         main.cpp
         GameWindow.cpp
         PrologBridge.cpp
+        Menu.cpp
 )
 
 add_executable(projetIA41 ${SOURCES})

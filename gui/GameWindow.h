@@ -3,47 +3,53 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
-
-// C'est cet include qui apporte la définition de Cell et PlayerColor.
-// On ne doit donc PAS les redéfinir ici.
+#include <iostream>
 #include "PrologBridge.h"
+#include "GameConfig.h"
 
-class GameWindow
-{
+// On utilise directement 'Cell' qui vient de PrologBridge.h
+
+class GameWindow {
 public:
-    GameWindow();
+    GameWindow(GameConfig config);
     void run();
 
 private:
+    // --- Moteur Graphique ---
     sf::RenderWindow window;
+    sf::Font font;
 
-    // Notre pont vers Prolog
-    PrologBridge prolog; // (On garde ça pour plus tard)
-
-    // Cell est connu grâce à PrologBridge.h
-    std::vector<Cell> boardState;
-    std::vector<int> currentPath;
-
-    // --- ÉLÉMENTS D'ÉTAT ---
-    int selectedIndex;
-    int targetIndex;
+    // --- UI ---
     sf::RectangleShape validateButton;
+    sf::Text victoryText;
+    sf::Text subText;
 
-    bool isGameOver;       // Est-ce que le jeu est fini ?
-    PlayerColor winner;    // Qui a gagné ?
-    sf::Font font;         // La police d'écriture
-    sf::Text victoryText;  // Le texte à afficher
-    sf::Text subText;      // Sous-titre (ex: "Cliquer pour quitter")
+    // --- État du Jeu ---
+    std::vector<Cell> boardState;
 
+    std::vector<int> currentPath;
     PlayerColor currentPlayerTurn;
+    bool isGameOver;
+    PlayerColor winner;
+
+    // --- Configuration ---
+    PlayerType p1Type;
+    PlayerType p2Type;
+
+    // --- Interface Prolog ---
+    PrologBridge prolog;
+
+    // --- Méthodes ---
+    void initMockBoard();
+    void processEvents();
+    void handleMouseClick(int mouseX, int mouseY);
+
+    void updateGameLogic();
+    void playAITurn(PlayerColor color);
 
     void drawBoard();
     void drawButton();
     void drawGameOver();
-    void initMockBoard();
-    void processEvents();
-    void handleMouseClick(int x, int y);
-    void playAITurn();
 };
 
-#endif
+#endif // GAMEWINDOW_H

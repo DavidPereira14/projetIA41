@@ -70,6 +70,13 @@ build CMakeFiles/projetIA41.dir/PrologBridge.cpp.obj: CXX_COMPILER__projetIA41_u
   OBJECT_DIR = CMakeFiles\projetIA41.dir
   OBJECT_FILE_DIR = CMakeFiles\projetIA41.dir
 
+build CMakeFiles/projetIA41.dir/Menu.cpp.obj: CXX_COMPILER__projetIA41_unscanned_Debug C$:/Users/v05ax/OneDrive$ -$ Université$ De$ Technologie$ De$ Belfort-Montbeliard/IA41/projet/projetIA41/gui/Menu.cpp || cmake_object_order_depends_target_projetIA41
+  DEP_FILE = CMakeFiles\projetIA41.dir\Menu.cpp.obj.d
+  FLAGS = -g -std=gnu++17 -fdiagnostics-color=always
+  INCLUDES = -I"C:/Program Files/swipl/include" -I"C:/Users/v05ax/OneDrive - Université De Technologie De Belfort-Montbeliard/IA41/projet/projetIA41/gui/../external/SFML-2.5.1/include"
+  OBJECT_DIR = CMakeFiles\projetIA41.dir
+  OBJECT_FILE_DIR = CMakeFiles\projetIA41.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target projetIA41
@@ -78,7 +85,7 @@ build CMakeFiles/projetIA41.dir/PrologBridge.cpp.obj: CXX_COMPILER__projetIA41_u
 #############################################
 # Link the executable projetIA41.exe
 
-build projetIA41.exe: CXX_EXECUTABLE_LINKER__projetIA41_Debug CMakeFiles/projetIA41.dir/main.cpp.obj CMakeFiles/projetIA41.dir/GameWindow.cpp.obj CMakeFiles/projetIA41.dir/PrologBridge.cpp.obj | C$:/Program$ Files/swipl/bin/libswipl.lib
+build projetIA41.exe: CXX_EXECUTABLE_LINKER__projetIA41_Debug CMakeFiles/projetIA41.dir/main.cpp.obj CMakeFiles/projetIA41.dir/GameWindow.cpp.obj CMakeFiles/projetIA41.dir/PrologBridge.cpp.obj CMakeFiles/projetIA41.dir/Menu.cpp.obj | C$:/Program$ Files/swipl/bin/libswipl.lib
   FLAGS = -g
   LINK_LIBRARIES = "C:/Program Files/swipl/bin/libswipl.lib"  -lsfml-graphics  -lsfml-window  -lsfml-system  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   LINK_PATH = -LC:/Users/v05ax/ONEDRI~1/IA41/projet/PROJET~1/gui/../external/SFML-2~1.1/lib

@@ -402,3 +402,4 @@ main :-
     JoueurInitial = joueur(TypeInitial, CouleurInitial),
 
     jouer(PlateauInitial, JoueurInitial).
+

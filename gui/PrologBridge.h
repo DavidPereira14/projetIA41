@@ -28,9 +28,6 @@ public:
     PrologBridge();
     ~PrologBridge();
 
-    // Récupère le plateau initial sous forme de vecteur de piles
-    std::vector<std::string> getInitialBoard();
-
     // Joue un coup (from = case départ, count = nb pièces, path = liste indices des cases)
     bool isValidMove(const std::vector<Cell>& board, int start, int end, int numPieces, PlayerColor player);
 
@@ -44,9 +41,6 @@ public:
     std::vector<std::string> getBoard();
 
 private:
-    // Initialise Prolog (appelée automatiquement dans le constructeur)
-    void initProlog();
-
 
 };
 
