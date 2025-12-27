@@ -323,13 +323,6 @@ afficher_ligne_ludique(IndiceDebut, P1, P2, P3) :-
     write('  |'), afficher_composition_pile_ligne(P1),
     write('|'), afficher_composition_pile_ligne(P2),
     write('|'), afficher_composition_pile_ligne(P3), writeln('|'),
-
-    % Ligne 3: Première lettre du sommet
-    top_letter(P1, L1),
-    top_letter(P2, L2),
-    top_letter(P3, L3),
-    format('  |      ~w      |      ~w      |      ~w      |~n',
-           [L1, L2, L3]),
     writeln('  +---------------+---------------+---------------+').
 
 
