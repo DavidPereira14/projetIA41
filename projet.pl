@@ -53,11 +53,11 @@ chemin_de_longueur(Depart, Pas, Chemin) :-
 
 chemin_sans_repet(_, 0, _, []).
 chemin_sans_repet(Actuel, Pas, Visitees, [Next|R]) :-
-    Pas > 0,
-    voisin(Actuel, Next),
-    \+ member(Next, Visitees),
-    P1 is Pas - 1,
-    chemin_sans_repet(Next, P1, [Next|Visitees], R).
+    Pas > 0, % il doit rester des pas
+    voisin(Actuel, Next), % trouver une case adjacente
+    \+ member(Next, Visitees), % Ne pas repasser par une case visitée
+    P1 is Pas - 1, % Décrémentation
+    chemin_sans_repet(Next, P1, [Next|Visitees], R). % Appel récursif
 
 
 % --- Vérification de la Légalité ---
@@ -176,12 +176,12 @@ minimax(Plateau, Joueur, 0, _, Score) :-
     evaluer(Plateau, Joueur, Score), !.
 
 minimax(Plateau, Joueur, Profondeur, MeilleurCoup, Score) :-
-    coups_legaux(Plateau, Joueur, Coups),
+    coups_legaux(Plateau, Joueur, Coups), % Génération de tous les états fils
     (   Coups = []
     ->  Score = -1000, MeilleurCoup = none  % Pas de coup possible, défaite
     ;   P1 is Profondeur - 1,
         changer_joueur(Joueur, Adversaire),
-        evaluer_coups(Coups, Plateau, Adversaire, P1, MeilleurCoup, Score)
+        evaluer_coups(Coups, Plateau, Adversaire, P1, MeilleurCoup, Score) % Appel de l'évaluation sur la liste des coups
     ).
 
 % evaluer_coups(Coups, Plateau, Joueur, Adversaire, Profondeur, MeilleurCoup, Score)
