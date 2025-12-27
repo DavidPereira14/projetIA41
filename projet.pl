@@ -344,11 +344,6 @@ afficher_composition_pile_ligne(Pile) :-
     tab(Padding),
     write(String),
     tab(Extra).
-
-
-% top_letter(Pile, Letter)
-top_letter([], ' ').
-top_letter([Top|_], Top).
     
 % --- Lancement du Jeu ---
 
