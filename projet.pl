@@ -323,8 +323,6 @@ afficher_ligne_ludique(IndiceDebut, P1, P2, P3) :-
     write('  |'), afficher_composition_pile_ligne(P1),
     write('|'), afficher_composition_pile_ligne(P2),
     write('|'), afficher_composition_pile_ligne(P3), writeln('|'),
-    writeln('  +---------------+---------------+---------------+').
-
 
 afficher_composition_pile_ligne(Pile) :-
     (   Pile = []
