@@ -42,9 +42,12 @@ voisin(8, 5). voisin(8, 7).
 %                       LOGIQUE DES DÉPLACEMENTS
 % ==================================================================
 
-% --- Génération/Vérification du Chemin (CORRIGÉ) ---
+% --- Génération/Vérification du Chemin ---
 
-% chemin_de_longueur(+Depart, +Pas, -Chemin)
+
+%-------------------------------------------------------------%
+%    chemin_de_longueur(+Depart, +Pas, -Chemin)
+%-------------------------------------------------------------%
 chemin_de_longueur(Depart, Pas, Chemin) :-
     length(Chemin, Len),
     Len is Pas + 1,
@@ -60,9 +63,12 @@ chemin_sans_repet(Actuel, Pas, Visitees, [Next|R]) :-
     chemin_sans_repet(Next, P1, [Next|Visitees], R). % Appel récursif
 
 
-% --- Vérification de la Légalité ---
+% --- Vérification de la Légalité du coup ---
 
-% coups_legaux(Plateau, Joueur, Coups)
+
+%-------------------------------------------------------------%
+%    coups_legaux(Plateau, Joueur, Coups)
+%-------------------------------------------------------------%
 coups_legaux(Plateau, Joueur, Coups) :-
     findall(Coup,
             ( (Coup = coup(Depart, 1, [Depart, Arrivee]),
@@ -91,8 +97,10 @@ coups_legaux(Plateau, Joueur, Coups) :-
             ),
             Coups).
 
-
+%-------------------------------------------------------------%
 % coup_legal(Plateau, Joueur, Coup)
+%-------------------------------------------------------------%
+
 coup_legal(Plateau, Joueur, coup(Depart, NbPieces, Chemin)) :-
     % 1. Sommet du joueur
     pile_a(Plateau, Depart, Pile),
@@ -112,7 +120,10 @@ coup_legal(Plateau, Joueur, coup(Depart, NbPieces, Chemin)) :-
     % 4. Indices valides
     tous_indices_valides(Chemin, Plateau).
 
-% pieces_deplacables(+Pile, +Joueur, -Max)
+%-------------------------------------------------------------%
+%    pieces_deplacables(+Pile, +Joueur, -Max)
+%-------------------------------------------------------------%
+
 pieces_deplacables([], _, 0).
 pieces_deplacables([Sommet | _], Joueur, 0) :- Sommet \= Joueur, !.
 pieces_deplacables([J|R], J, Max) :-
@@ -120,7 +131,10 @@ pieces_deplacables([J|R], J, Max) :-
     Temp is MaxR + 1,
     Max is min(Temp, 3).
 
-% tous_indices_valides(+Chemin, +Plateau)
+%-------------------------------------------------------------%
+%    tous_indices_valides(+Chemin, +Plateau)
+%-------------------------------------------------------------%
+
 tous_indices_valides([], _).
 tous_indices_valides([I|R], Plateau) :-
     length(Plateau, Taille),
@@ -131,20 +145,27 @@ tous_indices_valides([I|R], Plateau) :-
 %                       APPLICATION DU COUP
 % ==================================================================
 
-% prendre_pieces(Pile, Nombre, PiecesPrises, Reste)
+%-------------------------------------------------------------%
+%     prendre_pieces(Pile, Nombre, PiecesPrises, Reste)
+%-------------------------------------------------------------%
 prendre_pieces(Pile, 0, [], Pile).
 prendre_pieces([T|R], N, [T|R2], Reste) :- 
     N > 0,
     N1 is N-1,
     prendre_pieces(R, N1, R2, Reste).
+    
+%-------------------------------------------------------------%
+%     deposer_pieces(PileDestination, PiecesPrises, NouvellePile)
+%-------------------------------------------------------------%
 
-% deposer_pieces(PileDestination, PiecesPrises, NouvellePile)
 deposer_pieces(PileDestination, PiecesPrises, NouvellePile) :-
     append(PiecesPrises, PileDestination, NouvellePile).
 
-% appliquer_coup(Plateau, Coup, NouveauPlateau)
+%-------------------------------------------------------------%
+%     appliquer_coup(Plateau, Coup, NouveauPlateau)
+%-------------------------------------------------------------%
+
 appliquer_coup(Plateau, coup(Depart, NbPieces, Chemin), NouveauPlateau) :-
-    
     pile_a(Plateau, Depart, PileDepart),
     last(Chemin, Arrivee),
     pile_a(Plateau, Arrivee, PileArrivee), 
@@ -159,19 +180,26 @@ appliquer_coup(Plateau, coup(Depart, NbPieces, Chemin), NouveauPlateau) :-
 %                       INTELLIGENCE ARTIFICIELLE
 % ==================================================================
 
-% evaluer(Plateau, Joueur, Score)
+%-------------------------------------------------------------%
+%     evaluer(Plateau, Joueur, Score)
+%-------------------------------------------------------------%
+
 evaluer(Plateau, Joueur, Score) :-
     changer_joueur(Joueur, Adversaire),
     score_joueur(Plateau, Joueur, ScoreJoueur),
     score_joueur(Plateau, Adversaire, ScoreAdversaire),
     Score is ScoreJoueur - ScoreAdversaire.
-
-% score_joueur(Plateau, Joueur, Score)
+    
+%-------------------------------------------------------------%
+%     score_joueur(Plateau, Joueur, Score)
+%-------------------------------------------------------------%
 score_joueur(Plateau, Joueur, Score) :-
     findall(H, (member(Pile, Plateau), Pile = [Joueur|_], length(Pile, H)), Heights),
     sum_list(Heights, Score).
 
-% minimax(Plateau, Joueur, Profondeur, MeilleurCoup, Score)
+%---------------------------------------------------------------%
+%     minimax(Plateau, Joueur, Profondeur, MeilleurCoup, Score)
+%---------------------------------------------------------------%
 minimax(Plateau, Joueur, 0, _, Score) :-
     evaluer(Plateau, Joueur, Score), !.
 
@@ -181,10 +209,12 @@ minimax(Plateau, Joueur, Profondeur, MeilleurCoup, Score) :-
     ->  Score = -1000, MeilleurCoup = none  % Pas de coup possible, défaite
     ;   P1 is Profondeur - 1,
         changer_joueur(Joueur, Adversaire),
-        evaluer_coups(Coups, Plateau, Adversaire, P1, MeilleurCoup, Score) % Appel de l'évaluation sur la liste des coups
+        evaluer_coups(Coups, Plateau, Adversaire, P1, MeilleurCoup, Score) % Appel de l évaluation sur la liste des coups
     ).
 
-% evaluer_coups(Coups, Plateau, Joueur, Adversaire, Profondeur, MeilleurCoup, Score)
+%----------------------------------------------------------------------------------------%
+%     evaluer_coups(Coups, Plateau, Joueur, Adversaire, Profondeur, MeilleurCoup, Score)
+%----------------------------------------------------------------------------------------%
 evaluer_coups([Coup], Plateau, Adversaire, Profondeur, Coup, Score) :-
     appliquer_coup(Plateau, Coup, NouveauPlateau),
     minimax(NouveauPlateau, Adversaire, Profondeur, _, ScoreOpp),
@@ -200,7 +230,9 @@ evaluer_coups([Coup|R], Plateau, Adversaire, Profondeur, MeilleurCoup, Score) :-
     ;   MeilleurCoup = AutreCoup, Score = ScoreAutre
     ).
 
-% meilleur_coup(Plateau, Joueur, Coup)
+%-------------------------------------------------------------%
+%     meilleur_coup(Plateau, Joueur, Coup)
+%-------------------------------------------------------------%
 meilleur_coup(Plateau, Joueur, Coup) :-
     minimax(Plateau, Joueur, 2, Coup, _).  % Profondeur 1 pour éviter le dépassement de pile
 
@@ -208,7 +240,9 @@ meilleur_coup(Plateau, Joueur, Coup) :-
 %                           VICTOIRE
 % ==================================================================
 
-% victoire(Plateau, Joueur)
+%-------------------------------------------------------------%
+%     victoire(Plateau, Joueur)
+%-------------------------------------------------------------%
 victoire(Plateau, Joueur) :-
     verif_victoire(Plateau, Joueur).
 
@@ -222,12 +256,20 @@ verif_victoire([[Joueur|_]|R], Joueur) :-
 %                       BOUCLE DE JEU & I/O
 % ==================================================================
 
-% changer_joueur(Joueur, JoueurSuivant)
+%-------------------------------------------------------------%
+%     changer_joueur(Joueur, JoueurSuivant)
+%-------------------------------------------------------------%
+
 changer_joueur(n, b).
 changer_joueur(b, n).
 
+%-------------------------------------------------------------%
 % changer_joueur_joueur(Joueur, JoueurSuivant)
+%-------------------------------------------------------------%
+
 changer_joueur_joueur(joueur(_, C1), joueur(Type2, C2)) :- changer_joueur(C1, C2), type_joueur(C2, Type2).
+
+
 
 % --- Boucle Principale  ---
 
@@ -292,7 +334,7 @@ afficher_coup(coup(Depart, NbPieces, Chemin)) :-
     format('  -> Le joueur déplace ~w pièce(s) de C~w vers C~w.~n', 
            [NbPieces, Depart, Arrivee]).
 
-% --- Affichage du Plateau (Détaillé et Agrandi) ---
+% --- Affichage du Plateau ---
 
 afficher_plateau(Plateau) :-
     writeln('\n-------------------------------------------------------------------------------'),
@@ -302,17 +344,17 @@ afficher_plateau(Plateau) :-
 
     Plateau = [P0, P1, P2, P3, P4, P5, P6, P7, P8],
 
-    afficher_ligne_ludique(0, P0, P1, P2),
+    afficher_ligne(0, P0, P1, P2),
     writeln(''),
-    afficher_ligne_ludique(3, P3, P4, P5),
+    afficher_ligne(3, P3, P4, P5),
     writeln(''),
-    afficher_ligne_ludique(6, P6, P7, P8),
+    afficher_ligne(6, P6, P7, P8),
 
     writeln('-------------------------------------------------------------------------------\n'),
     writeln('-------------------------------------------------------------------------------\n').
 
 
-afficher_ligne_ludique(IndiceDebut, P1, P2, P3) :-
+afficher_ligne(IndiceDebut, P1, P2, P3) :-
     I1 is IndiceDebut, I2 is IndiceDebut + 1, I3 is IndiceDebut + 2,
 
     % Ligne 1: Indices de case
