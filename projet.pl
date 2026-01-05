@@ -364,7 +364,7 @@ afficher_ligne(IndiceDebut, P1, P2, P3) :-
     % Ligne 2: Affichage de la composition détaillée de la pile
     write('  |'), afficher_composition_pile_ligne(P1),
     write('|'), afficher_composition_pile_ligne(P2),
-    write('|'), afficher_composition_pile_ligne(P3), writeln('|'),
+    write('|'), afficher_composition_pile_ligne(P3), writeln('|').
 
 afficher_composition_pile_ligne(Pile) :-
     (   Pile = []
